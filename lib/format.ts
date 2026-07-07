@@ -44,3 +44,14 @@ export function formatDate(date: string | null | undefined): string {
     day: 'numeric',
   })
 }
+
+export function formatDateTime(timestamp: string | null | undefined): string {
+  if (!timestamp) return '—'
+  return new Date(timestamp).toLocaleString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: 'numeric',
+    minute: '2-digit',
+  })
+}

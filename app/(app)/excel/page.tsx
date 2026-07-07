@@ -1,7 +1,7 @@
 import { Download, AlertTriangle } from 'lucide-react'
 import { createClient } from '@/lib/supabase/server'
 import { getCompanyId } from '@/lib/company'
-import { formatDate } from '@/lib/format'
+import { formatDateTime } from '@/lib/format'
 import SyncButton from './SyncButton'
 
 export default async function ExcelPage() {
@@ -26,27 +26,27 @@ export default async function ExcelPage() {
       <div className="mb-6">
         <h1 className="text-2xl font-semibold text-gray-900">Excel Workbook</h1>
         <p className="mt-1 text-sm text-gray-500">
-          A synced mirror of your Customers, Estimates, Invoices, Payments, Receipts, Expenses,
-          Bookkeeping Summary, and Settings — kept current automatically as you work.
+          Download a complete Excel copy of your business records — customers, estimates,
+          invoices, payments, receipts, and expenses — all in one file.
         </p>
       </div>
 
       <div className="flex items-start gap-3 rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 mb-6">
         <AlertTriangle size={18} className="text-amber-600 shrink-0 mt-0.5" />
         <p className="text-sm text-amber-800">
-          This workbook is a <strong>read-only mirror</strong>. Any edits made directly to the
-          downloaded file will be overwritten the next time the app syncs — use it for viewing,
-          reporting, or your own formulas in extra columns, not as the source of truth.
+          This file is a snapshot, not a live document. If you edit the downloaded file, those
+          changes will <strong>NOT</strong> be saved back into the app — they&apos;ll be
+          overwritten the next time you generate a new copy. Use this file for viewing, printing,
+          or sharing your records, not for making changes.
         </p>
       </div>
 
       <div className="bg-white rounded-xl border border-gray-200 p-6">
-        <dl className="mb-5">
-          <dt className="text-xs font-medium text-gray-500 uppercase tracking-wide">Last Synced</dt>
-          <dd className="mt-0.5 text-sm text-gray-900">
-            {lastSynced ? formatDate(lastSynced.slice(0, 10)) : 'Never — click Sync Now to generate it.'}
-          </dd>
-        </dl>
+        <p className="mb-5 text-sm text-gray-900">
+          {lastSynced
+            ? `Last generated: ${formatDateTime(lastSynced)}. Click below to create an updated copy.`
+            : "You haven't generated an Excel file yet. Click the button below to create one."}
+        </p>
 
         <div className="flex flex-wrap items-center gap-3">
           <SyncButton />

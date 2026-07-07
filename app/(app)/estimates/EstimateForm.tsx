@@ -4,6 +4,7 @@ import { useActionState, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { FormField, inputCls } from '@/components/ui/FormField'
 import LineItemsEditor, { emptyLineItems, type LineItemRow } from '@/components/LineItemsEditor'
+import PdfPreviewModal from '@/components/PdfPreviewModal'
 import { formatCurrency } from '@/lib/format'
 import { useFormDraft } from '@/lib/hooks/useFormDraft'
 import type { EstimateActionState } from './actions'
@@ -13,6 +14,7 @@ interface CustomerOption {
   id: string
   name: string
   company_name: string | null
+  billing_address: string | null
 }
 
 interface JobOption {
@@ -62,6 +64,54 @@ export default function EstimateForm({
     estimate ? estimate.tax_rate * 100 : defaultTaxRatePct
   )
 
+  const [isPreviewLoading, setIsPreviewLoading] = useState(false)
+  const [previewError, setPreviewError] = useState<string | null>(null)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const formRef = useRef<HTMLFormElement>(null)
+
+  function closePreview() {
+    if (previewUrl) URL.revokeObjectURL(previewUrl)
+    setPreviewUrl(null)
+  }
+
+  async function handlePreview() {
+    if (!formRef.current) return
+    setPreviewError(null)
+    setIsPreviewLoading(true)
+    try {
+      const fd = new FormData(formRef.current)
+      const customerId = (fd.get('customer_id') as string) || ''
+      const customer = customers.find((c) => c.id === customerId) ?? null
+
+      const res = await fetch('/estimates/preview-pdf', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          customer,
+          estimate_date: fd.get('estimate_date'),
+          expiration_date: fd.get('expiration_date') || null,
+          job_location: fd.get('job_location'),
+          job_name: fd.get('job_name'),
+          equipment_info: fd.get('equipment_info'),
+          description_of_work: fd.get('description_of_work'),
+          notes: fd.get('notes'),
+          terms: fd.get('terms'),
+          discount,
+          tax_rate: taxRatePct / 100,
+          revision_number: estimate?.revision_number ?? 1,
+          line_items: JSON.stringify(lineItems),
+        }),
+      })
+      if (!res.ok) throw new Error('Failed to generate preview.')
+      const blob = await res.blob()
+      setPreviewUrl(URL.createObjectURL(blob))
+    } catch {
+      setPreviewError('Failed to generate preview. Please try again.')
+    } finally {
+      setIsPreviewLoading(false)
+    }
+  }
+
   const totals = useMemo(() => {
     const subtotal = lineItems.reduce((sum, li) => sum + li.quantity * li.unit_price, 0)
     const taxable = Math.max(0, subtotal - discount)
@@ -70,7 +120,6 @@ export default function EstimateForm({
     return { subtotal, tax_amount, total }
   }, [lineItems, discount, taxRatePct])
 
-  const formRef = useRef<HTMLFormElement>(null)
   const { clearDraft } = useFormDraft('estimate:new', formRef, {
     enabled: !estimate,
     getExtra: () => ({ lineItems, discount, taxRatePct }),
@@ -82,6 +131,8 @@ export default function EstimateForm({
   })
 
   return (
+    <>
+    {previewUrl && <PdfPreviewModal url={previewUrl} onClose={closePreview} />}
     <form ref={formRef} action={formAction} onSubmit={clearDraft} className="space-y-6 max-w-3xl">
       <input type="hidden" name="line_items" value={JSON.stringify(lineItems)} />
 
@@ -289,6 +340,12 @@ export default function EstimateForm({
         </div>
       </div>
 
+      {previewError && (
+        <p className="text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+          {previewError}
+        </p>
+      )}
+
       <div className="flex items-center gap-3">
         <button
           type="submit"
@@ -297,10 +354,19 @@ export default function EstimateForm({
         >
           {isPending ? 'Saving…' : submitLabel}
         </button>
+        <button
+          type="button"
+          onClick={handlePreview}
+          disabled={isPreviewLoading}
+          className="rounded-lg border border-gray-300 bg-white px-5 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 transition-colors"
+        >
+          {isPreviewLoading ? 'Generating…' : 'Preview PDF'}
+        </button>
         <Link href="/estimates" className="text-sm text-gray-500 hover:text-gray-700">
           Cancel
         </Link>
       </div>
     </form>
+    </>
   )
 }

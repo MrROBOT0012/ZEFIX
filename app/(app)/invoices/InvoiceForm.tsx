@@ -4,6 +4,7 @@ import { useActionState, useMemo, useRef, useState } from 'react'
 import Link from 'next/link'
 import { FormField, inputCls } from '@/components/ui/FormField'
 import LineItemsEditor, { emptyLineItems, type LineItemRow } from '@/components/LineItemsEditor'
+import PdfPreviewModal from '@/components/PdfPreviewModal'
 import { formatCurrency } from '@/lib/format'
 import { useFormDraft } from '@/lib/hooks/useFormDraft'
 import type { InvoiceActionState } from './actions'
@@ -68,6 +69,57 @@ export default function InvoiceForm({
     invoice ? invoice.tax_rate * 100 : defaultTaxRatePct
   )
 
+  const [isPreviewLoading, setIsPreviewLoading] = useState(false)
+  const [previewError, setPreviewError] = useState<string | null>(null)
+  const [previewUrl, setPreviewUrl] = useState<string | null>(null)
+  const formRef = useRef<HTMLFormElement>(null)
+
+  function closePreview() {
+    if (previewUrl) URL.revokeObjectURL(previewUrl)
+    setPreviewUrl(null)
+  }
+
+  async function handlePreview() {
+    if (!formRef.current) return
+    setPreviewError(null)
+    setIsPreviewLoading(true)
+    try {
+      const fd = new FormData(formRef.current)
+      const customerId = (fd.get('customer_id') as string) || ''
+      const customer = customers.find((c) => c.id === customerId) ?? null
+
+      const res = await fetch('/invoices/preview-pdf', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          customer,
+          invoice_type: fd.get('invoice_type'),
+          invoice_date: fd.get('invoice_date'),
+          due_date: fd.get('due_date') || null,
+          billing_address: fd.get('billing_address'),
+          job_location: fd.get('job_location'),
+          job_name: fd.get('job_name'),
+          equipment_info: fd.get('equipment_info'),
+          po_number: fd.get('po_number'),
+          description_of_work: fd.get('description_of_work'),
+          payment_terms: fd.get('payment_terms'),
+          payment_instructions: fd.get('payment_instructions'),
+          notes: fd.get('notes'),
+          discount,
+          tax_rate: taxRatePct / 100,
+          line_items: JSON.stringify(lineItems),
+        }),
+      })
+      if (!res.ok) throw new Error('Failed to generate preview.')
+      const blob = await res.blob()
+      setPreviewUrl(URL.createObjectURL(blob))
+    } catch {
+      setPreviewError('Failed to generate preview. Please try again.')
+    } finally {
+      setIsPreviewLoading(false)
+    }
+  }
+
   const totals = useMemo(() => {
     const subtotal = lineItems.reduce((sum, li) => sum + li.quantity * li.unit_price, 0)
     const taxable = Math.max(0, subtotal - discount)
@@ -76,7 +128,6 @@ export default function InvoiceForm({
     return { subtotal, tax_amount, total }
   }, [lineItems, discount, taxRatePct])
 
-  const formRef = useRef<HTMLFormElement>(null)
   const { clearDraft } = useFormDraft('invoice:new', formRef, {
     enabled: !invoice,
     getExtra: () => ({ lineItems, discount, taxRatePct }),
@@ -88,6 +139,8 @@ export default function InvoiceForm({
   })
 
   return (
+    <>
+    {previewUrl && <PdfPreviewModal url={previewUrl} onClose={closePreview} />}
     <form ref={formRef} action={formAction} onSubmit={clearDraft} className="space-y-6 max-w-3xl">
       <input type="hidden" name="line_items" value={JSON.stringify(lineItems)} />
 
@@ -337,6 +390,12 @@ export default function InvoiceForm({
         </div>
       </div>
 
+      {previewError && (
+        <p className="text-sm text-red-700 bg-red-50 border border-red-200 rounded-lg px-3 py-2">
+          {previewError}
+        </p>
+      )}
+
       <div className="flex items-center gap-3">
         <button
           type="submit"
@@ -345,10 +404,19 @@ export default function InvoiceForm({
         >
           {isPending ? 'Saving…' : submitLabel}
         </button>
+        <button
+          type="button"
+          onClick={handlePreview}
+          disabled={isPreviewLoading}
+          className="rounded-lg border border-gray-300 bg-white px-5 py-2.5 text-sm font-medium text-gray-700 hover:bg-gray-50 disabled:opacity-50 transition-colors"
+        >
+          {isPreviewLoading ? 'Generating…' : 'Preview PDF'}
+        </button>
         <Link href="/invoices" className="text-sm text-gray-500 hover:text-gray-700">
           Cancel
         </Link>
       </div>
     </form>
+    </>
   )
 }

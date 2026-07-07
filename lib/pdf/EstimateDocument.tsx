@@ -84,9 +84,10 @@ interface Props {
   estimate: Estimate
   customer: { name: string; company_name: string | null; billing_address: string | null } | null
   lineItems: EstimateLineItem[]
+  draft?: boolean
 }
 
-export default function EstimateDocument({ company, estimate, customer, lineItems }: Props) {
+export default function EstimateDocument({ company, estimate, customer, lineItems, draft }: Props) {
   return (
     <Document>
       <Page size="LETTER" style={styles.page} wrap>
@@ -109,7 +110,7 @@ export default function EstimateDocument({ company, estimate, customer, lineItem
           <Text style={styles.title}>ESTIMATE</Text>
           <View style={styles.metaBlock}>
             <Text>
-              #{estimate.estimate_number}
+              {draft ? 'DRAFT' : `#${estimate.estimate_number}`}
               {estimate.revision_number > 1 ? ` (Rev ${estimate.revision_number})` : ''}
             </Text>
             <Text>Date: {formatDate(estimate.estimate_date)}</Text>

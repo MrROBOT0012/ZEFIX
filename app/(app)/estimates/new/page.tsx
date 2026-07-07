@@ -16,7 +16,7 @@ export default async function NewEstimatePage({
   const [{ data: customers }, { data: jobs }] = await Promise.all([
     supabase
       .from('customers')
-      .select('id, name, company_name')
+      .select('id, name, company_name, billing_address')
       .eq('company_id', companyId)
       .order('name'),
     supabase

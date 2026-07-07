@@ -93,9 +93,10 @@ interface Props {
   invoice: Invoice
   customer: { name: string; company_name: string | null } | null
   lineItems: InvoiceLineItem[]
+  draft?: boolean
 }
 
-export default function InvoiceDocument({ company, invoice, customer, lineItems }: Props) {
+export default function InvoiceDocument({ company, invoice, customer, lineItems, draft }: Props) {
   return (
     <Document>
       <Page size="LETTER" style={styles.page} wrap>
@@ -117,7 +118,7 @@ export default function InvoiceDocument({ company, invoice, customer, lineItems 
         <View style={styles.titleRow}>
           <Text style={styles.title}>INVOICE</Text>
           <View style={styles.metaBlock}>
-            <Text>#{invoice.invoice_number}</Text>
+            <Text>{draft ? 'DRAFT' : `#${invoice.invoice_number}`}</Text>
             <Text>Date: {formatDate(invoice.invoice_date)}</Text>
             {invoice.due_date && <Text>Due: {formatDate(invoice.due_date)}</Text>}
             {invoice.po_number && <Text>PO#: {invoice.po_number}</Text>}

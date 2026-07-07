@@ -14,7 +14,7 @@ export default async function EditEstimatePage({ params }: { params: Promise<{ i
     await Promise.all([
       supabase.from('estimates').select('*').eq('id', id).single(),
       supabase.from('estimate_line_items').select('*').eq('estimate_id', id).order('sort_order'),
-      supabase.from('customers').select('id, name, company_name').eq('company_id', companyId).order('name'),
+      supabase.from('customers').select('id, name, company_name, billing_address').eq('company_id', companyId).order('name'),
       supabase.from('jobs').select('id, job_name').eq('company_id', companyId).order('job_name'),
     ])
 

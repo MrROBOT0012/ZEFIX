@@ -3,7 +3,7 @@
 import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import {
-  LayoutDashboard, Users, ClipboardList, FileText,
+  LayoutDashboard, Users, Briefcase, ClipboardList, FileText,
   CreditCard, Receipt, Wallet, BookOpen, FileSpreadsheet,
   Settings, LogOut,
 } from 'lucide-react'
@@ -12,6 +12,7 @@ import { createClient } from '@/lib/supabase/client'
 const nav = [
   { href: '/dashboard',   label: 'Dashboard',   icon: LayoutDashboard },
   { href: '/customers',   label: 'Customers',   icon: Users },
+  { href: '/jobs',        label: 'Jobs',        icon: Briefcase },
   { href: '/estimates',   label: 'Estimates',   icon: ClipboardList },
   { href: '/invoices',    label: 'Invoices',    icon: FileText },
   { href: '/payments',    label: 'Payments',    icon: CreditCard },

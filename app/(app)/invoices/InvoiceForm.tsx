@@ -122,7 +122,10 @@ export default function InvoiceForm({
             </select>
           </FormField>
 
-          <FormField label="Job" hint="Optional — links this invoice to a job for profit tracking.">
+          <FormField
+            label="Job"
+            hint={jobs.length > 0 ? 'Optional — links this invoice to a job for profit tracking.' : undefined}
+          >
             <select name="job_id" defaultValue={invoice?.job_id ?? ''} className={inputCls}>
               <option value="">No job</option>
               {jobs.map((j) => (
@@ -131,6 +134,14 @@ export default function InvoiceForm({
                 </option>
               ))}
             </select>
+            {jobs.length === 0 && (
+              <p className="mt-1 text-xs text-gray-500">
+                No jobs yet.{' '}
+                <Link href="/jobs/new" target="_blank" className="text-blue-600 hover:text-blue-700">
+                  + New Job
+                </Link>
+              </p>
+            )}
           </FormField>
 
           <FormField label="Invoice Type">

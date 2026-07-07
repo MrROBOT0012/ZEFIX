@@ -11,9 +11,9 @@ import type { InvoiceStatus } from '@/types/database'
 export default async function InvoicesPage({
   searchParams,
 }: {
-  searchParams: Promise<{ customer?: string; q?: string; status?: string; from?: string; to?: string }>
+  searchParams: Promise<{ customer?: string; job?: string; q?: string; status?: string; from?: string; to?: string }>
 }) {
-  const { customer, q, status, from, to } = await searchParams
+  const { customer, job, q, status, from, to } = await searchParams
   const supabase = await createClient()
   const companyId = await getCompanyId()
 
@@ -25,6 +25,7 @@ export default async function InvoicesPage({
     .order('invoice_number', { ascending: false })
 
   if (customer) query = query.eq('customer_id', customer)
+  if (job) query = query.eq('job_id', job)
   if (from) query = query.gte('invoice_date', from)
   if (to) query = query.lte('invoice_date', to)
   if (status === 'overdue') {
@@ -42,7 +43,7 @@ export default async function InvoicesPage({
   const invoices = (allInvoices ?? []).filter((inv) =>
     matchesSearch([inv.invoice_number, customerName.get(inv.customer_id ?? '')], q ?? '')
   )
-  const hasActiveFilters = Boolean(q || status || from || to)
+  const hasActiveFilters = Boolean(q || status || from || to || job)
 
   return (
     <div>

@@ -5,7 +5,7 @@ import Link from 'next/link'
 import { usePathname, useRouter } from 'next/navigation'
 import {
   LayoutDashboard, FileText, ClipboardList, Wallet, MoreHorizontal,
-  Users, CreditCard, Receipt, BookOpen, FileSpreadsheet, Settings,
+  Users, Briefcase, CreditCard, Receipt, BookOpen, FileSpreadsheet, Settings,
   LogOut, X,
 } from 'lucide-react'
 import { createClient } from '@/lib/supabase/client'
@@ -19,6 +19,7 @@ const mainItems = [
 
 const moreItems = [
   { href: '/customers',   label: 'Customers',   icon: Users },
+  { href: '/jobs',        label: 'Jobs',        icon: Briefcase },
   { href: '/payments',    label: 'Payments',    icon: CreditCard },
   { href: '/receipts',    label: 'Receipts',    icon: Receipt },
   { href: '/bookkeeping', label: 'Bookkeeping', icon: BookOpen },
